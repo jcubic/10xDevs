@@ -1,0 +1,29 @@
+[**10x-devs**](../../../README.md)
+
+***
+
+[10x-devs](../../../modules.md) / [test/utils](../README.md) / logDOM
+
+# Function: logDOM()
+
+> **logDOM**(`dom?`, `maxLength?`, `options?`): `void`
+
+Defined in: node\_modules/@testing-library/dom/types/pretty-dom.d.ts:16
+
+## Parameters
+
+### dom?
+
+`Element` | `HTMLDocument`
+
+### maxLength?
+
+`number`
+
+### options?
+
+[`PrettyDOMOptions`](../interfaces/PrettyDOMOptions.md)
+
+## Returns
+
+`void`

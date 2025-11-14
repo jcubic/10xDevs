@@ -1,0 +1,11 @@
+[**10x-devs**](../../../../../../README.md)
+
+***
+
+[10x-devs](../../../../../../modules.md) / [prisma](../../../../../README.md) / [Prisma](../../../README.md) / [DMMF](../README.md) / Document
+
+# Type Alias: Document
+
+> **Document** = `ReadonlyDeep_2`\<\{ `datamodel`: [`Datamodel`](Datamodel.md); `mappings`: [`Mappings`](Mappings.md); `schema`: [`Schema`](Schema.md); \}\>
+
+Defined in: prisma-main/types/runtime/library.d.ts:843

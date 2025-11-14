@@ -1,0 +1,17 @@
+[**10x-devs**](../../../../README.md)
+
+***
+
+[10x-devs](../../../../modules.md) / [prisma](../../../README.md) / [Prisma](../README.md) / JsonNull
+
+# Variable: JsonNull
+
+> `const` **JsonNull**: [`JsonNull`](../namespaces/NullTypes/classes/JsonNull.md)
+
+Defined in: prisma-main/types/index.d.ts:344
+
+Helper for filtering JSON entries that have JSON `null` values (not empty on the db)
+
+## See
+
+https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field

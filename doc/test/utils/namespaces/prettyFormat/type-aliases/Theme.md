@@ -1,0 +1,51 @@
+[**10x-devs**](../../../../../README.md)
+
+***
+
+[10x-devs](../../../../../modules.md) / [test/utils](../../../README.md) / [prettyFormat](../README.md) / Theme
+
+# Type Alias: Theme
+
+> **Theme** = `object`
+
+Defined in: node\_modules/pretty-format/build/types.d.ts:32
+
+## Properties
+
+### comment
+
+> **comment**: `string`
+
+Defined in: node\_modules/pretty-format/build/types.d.ts:33
+
+***
+
+### content
+
+> **content**: `string`
+
+Defined in: node\_modules/pretty-format/build/types.d.ts:34
+
+***
+
+### prop
+
+> **prop**: `string`
+
+Defined in: node\_modules/pretty-format/build/types.d.ts:35
+
+***
+
+### tag
+
+> **tag**: `string`
+
+Defined in: node\_modules/pretty-format/build/types.d.ts:36
+
+***
+
+### value
+
+> **value**: `string`
+
+Defined in: node\_modules/pretty-format/build/types.d.ts:37
