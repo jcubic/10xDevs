@@ -12,6 +12,14 @@
 
 # testing
 /coverage
+/prisma-*/types/
+/prisma-e2e/*.db
+/prisma-e2e/test.db-journal
+/e2e/results/
+/e2e/report/
+/e2e/.auth/
+/playwright/.cache/
+/.nyc_output
 
 # next.js
 /.next/
@@ -23,6 +31,7 @@
 # misc
 .DS_Store
 *.pem
+.vscode
 
 # debug
 npm-debug.log*
@@ -31,7 +40,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
 
 # vercel
 .vercel
@@ -39,3 +48,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prisma generated files
+/prisma/generated/
+
+## Worktrees
+/base

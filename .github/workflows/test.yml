@@ -1,0 +1,262 @@
+name: 'Test'
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/**'
+      - 'e2e/**'
+      - 'prisma-main/**'
+      - 'prisma-e2e/**'
+      - 'public/**'
+      - 'scripts/**'
+      - '*.ts'
+      - '*.js'
+      - '*.json'
+      - '*.yml'
+      - '*.yaml'
+      - '.github/workflows/**'
+      - '!**.md'
+      - '!.ai/**'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'e2e/**'
+      - 'prisma-main/**'
+      - 'prisma-e2e/**'
+      - 'public/**'
+      - 'scripts/**'
+      - '*.ts'
+      - '*.js'
+      - '*.json'
+      - '*.yml'
+      - '*.yaml'
+      - '.github/workflows/**'
+      - '!**.md'
+      - '!.ai/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  prettier:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Prettier check
+        run: npx prettier --check .
+
+  unit-integration-tests:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:coverage
+
+      - name: Upload unit coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: unit-coverage
+          path: coverage/unit/
+          retention-days: 1
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Disable Next.js telemetry
+        run: npx next telemetry disable
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').dependencies['@playwright/test'].version)")" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+
+      - name: Run tests
+        run: npm run test:e2e:coverage
+        env:
+          CI: 'true'
+          COVERAGE: 'true'
+          BASE_URL: 'http://localhost:45678'
+          BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-characters-long-for-ci'
+          BETTER_AUTH_URL: 'http://localhost:45678'
+
+      - name: Check for E2E test artifacts
+        if: always()
+        id: check-artifacts
+        run: |
+          if [ -d e2e/results ] && [ "$(ls e2e/results)" ]; then
+            echo "E2E test artifacts found"
+            echo "has_artifacts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No E2E test artifacts found"
+            echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload E2E test artifacts
+        if: always() && steps.check-artifacts.outputs.has_artifacts == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: e2e/results/
+          retention-days: 7
+
+      - name: Display E2E coverage report
+        if: always()
+        run: |
+          if [ -d .nyc_output ] && [ "$(ls -A .nyc_output)" ]; then
+            echo "E2E Coverage Report:"
+            npx nyc report --reporter=text --temp-dir=.nyc_output
+          else
+            echo "No E2E coverage collected (requires webpack mode, not available in CI)"
+          fi
+
+      - name: Convert E2E coverage to lcov
+        run: |
+          mkdir -p coverage/e2e
+          if [ -d .nyc_output ] && [ "$(ls -A .nyc_output)" ]; then
+            echo "Converting E2E coverage to lcov format..."
+            npx nyc report --reporter=lcov --report-dir=coverage/e2e --temp-dir=.nyc_output
+            echo "E2E coverage converted"
+          else
+            echo "No E2E coverage found (webpack mode not used in CI)"
+            touch coverage/e2e/lcov.info
+          fi
+
+      - name: Upload E2E coverage artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-coverage
+          path: coverage/e2e/
+          retention-days: 1
+
+  merge-coverage:
+    runs-on: ubuntu-latest
+    needs: [unit-integration-tests, e2e-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download unit coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-coverage
+          path: coverage/unit/
+
+      - name: Download E2E coverage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-coverage
+          path: coverage/e2e/
+
+      - name: Merge coverage reports
+        run: |
+          mkdir -p coverage/merged
+
+          # Ensure coverage files exist
+          if [ ! -f coverage/unit/lcov.info ]; then
+            echo "Warning: No unit coverage found"
+            touch coverage/unit/lcov.info
+          fi
+
+          if [ ! -f coverage/e2e/lcov.info ]; then
+            echo "Warning: No E2E coverage found"
+            touch coverage/e2e/lcov.info
+          fi
+
+          # Merge coverage files by concatenation
+          echo "Merging coverage reports..."
+          cat coverage/unit/lcov.info coverage/e2e/lcov.info > coverage/merged/lcov.info
+
+          echo "Coverage merge complete"
+
+      - name: Display merged coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/merged/lcov.info ] && [ -s coverage/merged/lcov.info ]; then
+            echo "Merged Coverage Summary:"
+            npx lcov-summary coverage/merged/lcov.info
+          else
+            echo "No merged coverage summary available"
+          fi
+
+      - name: Upload merged coverage to Coveralls
+        if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/merged/lcov.info
+
+      - name: Purge README images
+        if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'
+        uses: kevincobain2000/action-camo-purge@v1
